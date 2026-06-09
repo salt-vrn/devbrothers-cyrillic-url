@@ -1,0 +1,246 @@
+/**
+ * DevBrothers Cyrillic URL Admin Styles
+ *
+ * @package DevBrothers_Cyrillic_Slugs
+ *
+ * Стили только для специфичных элементов плагина.
+ * Общие стили (кнопки, формы) загружаются из базового плагина devbrothers-admin-panel.
+ */
+
+/* === Чекбоксы настроек === */
+
+.devbrothers-settings-category fieldset label {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    transition: background 0.2s;
+}
+
+.devbrothers-settings-category fieldset label:hover {
+    background: #f6f7f7;
+    padding-left: 5px;
+    margin-left: -5px;
+}
+
+.devbrothers-settings-category fieldset label input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.devbrothers-settings-category fieldset label .description {
+    color: #646970;
+    font-size: 13px;
+    margin-left: 5px;
+}
+
+.devbrothers-settings-category fieldset label .dashicons {
+    margin-left: 5px;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+}
+
+/* WooCommerce icons */
+.dbcs-woo-icon {
+    color: #96588a;
+}
+
+.dbcs-woo-detected .dashicons {
+    color: #46b450;
+}
+
+/* === Кнопка конвертации === */
+
+#dbcs-convert-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    height: auto;
+    padding: 10px 20px;
+}
+
+#dbcs-convert-button .dashicons {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+}
+
+#dbcs-convert-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* === Прогресс конвертации === */
+
+.dbcs-progress-wrapper {
+    display: none;
+    margin-top: 15px;
+}
+
+.dbcs-progress-inner {
+    background: #f0f0f1;
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.dbcs-progress-track {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    height: 24px;
+    overflow: hidden;
+}
+
+.dbcs-progress-fill {
+    background: #2271b1;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease-out;
+}
+
+.dbcs-progress-text {
+    margin: 10px 0 0;
+    font-weight: 600;
+    color: #2271b1;
+}
+
+#dbcs-conversion-progress {
+    animation: dbcs-fadeIn 0.3s;
+}
+
+@keyframes dbcs-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === Результат конвертации === */
+
+.dbcs-result-wrapper {
+    display: none;
+    margin-top: 15px;
+}
+
+#dbcs-conversion-result {
+    animation: dbcs-slideIn 0.3s;
+}
+
+@keyframes dbcs-slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+#dbcs-conversion-result .notice {
+    padding: 12px;
+    margin: 0;
+    border-radius: 4px;
+}
+
+#dbcs-conversion-result .notice p {
+    margin: 0;
+}
+
+#dbcs-conversion-result ul {
+    margin: 10px 0 0 20px;
+    list-style: disc;
+}
+
+.dbcs-error-text {
+    color: #d63638;
+}
+
+.dbcs-error-details {
+    margin-top: 10px;
+}
+
+/* === Информационные блоки === */
+
+.dbcs-info-box {
+    background: #f0f6fc;
+    border-left: 4px solid #2271b1;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+}
+
+.dbcs-info-box .dashicons {
+    color: #2271b1;
+    margin-right: 5px;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    vertical-align: middle;
+}
+
+/* === Примеры транслитерации === */
+
+.dbcs-example-box {
+    background: #f6f7f7;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+    font-family: 'Courier New', monospace;
+}
+
+.dbcs-example-box code {
+    background: #fff;
+    padding: 4px 8px;
+    border-radius: 3px;
+    border: 1px solid #dcdcde;
+}
+
+/* === Анимация вращения === */
+
+@keyframes dbcs-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.dbcs-spinning {
+    animation: dbcs-spin 1s linear infinite;
+    display: inline-block;
+}
+
+/* === Список ошибок === */
+
+.dbcs-errors-list {
+    max-height: 300px;
+    overflow-y: auto;
+    background: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #c3c4c7;
+}
+
+.dbcs-errors-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.dbcs-errors-list li:last-child {
+    border-bottom: none;
+}
+
+/* === Адаптивность === */
+
+@media (max-width: 782px) {
+    #dbcs-convert-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
