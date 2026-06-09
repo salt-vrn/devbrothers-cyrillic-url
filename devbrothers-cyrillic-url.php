@@ -3,7 +3,7 @@
  * Plugin Name: DevBrothers Cyrillic URL
  * Plugin URI: https://devbrothers.ru/cyrillic-slugs
  * Description: Automatic transliteration of Cyrillic URLs to Latin according to ISO 9 standard. Support for all post types including WooCommerce.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: DevBrothers
  * Author URI: https://devbrothers.ru
  * License: GPL v2 or later

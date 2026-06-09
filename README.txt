@@ -3,7 +3,7 @@ Contributors: lzolotarev
 Tags: transliteration, cyrillic, slugs, url, seo
 Requires at least: 5.8
 Tested up to: 6.9
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 Requires PHP: 7.4
 Requires Plugins: devbrothers-admin-panel
 License: GPLv2 or later
@@ -118,6 +118,11 @@ No, transliteration only occurs when saving a post and does not affect site perf
 4. URL transliteration example
 
 == Changelog ==
+
+= 1.0.1 =
+* Updated code for WordPress 7.0 compatibility
+* Security and performance improvements
+
 
 = 1.0.0 =
 * Initial release
