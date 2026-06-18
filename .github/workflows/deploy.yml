@@ -17,5 +17,4 @@ jobs:
           SLUG: devbrothers-cyrillic-url
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
-          VERSION: ${{ github.event.release.tag_name }}
           ASSETS_DIR: .wordpress-org
