@@ -42,9 +42,13 @@ class DBCS_Converter {
             ]);
         }
 
-        $offset = isset($_POST['offset']) ? absint($_POST['offset']) : 0;
+        $raw_offset = $_POST['offset'] ?? '0';
+        if (!is_string($raw_offset) || !ctype_digit($raw_offset) || strlen($raw_offset) > 12) {
+            wp_send_json_error(['message' => __('Некорректное смещение конвертации.', 'devbrothers-cyrillic-url')]);
+        }
+        $offset = (int) $raw_offset;
 
-        $result = $this->convert_batch($offset);
+        $result = $this->convert_batch($offset, true);
 
         wp_send_json_success($result);
     }
@@ -55,7 +59,7 @@ class DBCS_Converter {
      * @param int $offset Смещение для SQL-выборки записей
      * @return array
      */
-    public function convert_batch($offset = 0) {
+    public function convert_batch($offset = 0, $check_permissions = false) {
         $settings   = get_option('dbcs_settings', []);
         $post_types = !empty($settings['post_types']) ? $settings['post_types'] : ['post', 'page'];
         $taxonomies = !empty($settings['taxonomies']) ? $settings['taxonomies'] : [];
@@ -76,14 +80,14 @@ class DBCS_Converter {
         $errors          = [];
 
         // Всегда обрабатываем записи по текущему offset
-        $posts_result    = $this->convert_posts($post_types, $offset);
+        $posts_result    = $this->convert_posts($post_types, $offset, $check_permissions);
         $converted_posts = $posts_result['converted'];
         $errors          = array_merge($errors, $posts_result['errors']);
         $posts_done      = $posts_result['fetched'] < $this->batch_limit;
 
         // Когда все записи просканированы, обрабатываем термины за один проход
         if ($posts_done) {
-            $terms_result    = $this->convert_terms($taxonomies, 0);
+            $terms_result    = $this->convert_terms($taxonomies, 0, $check_permissions);
             $converted_terms = $terms_result['converted'];
             $errors          = array_merge($errors, $terms_result['errors']);
         }
@@ -110,7 +114,7 @@ class DBCS_Converter {
      * @param int   $offset
      * @return array{converted: int, fetched: int, errors: array}
      */
-    private function convert_posts($post_types, $offset = 0) {
+    private function convert_posts($post_types, $offset = 0, $check_permissions = false) {
         global $wpdb;
 
         $offset    = absint($offset);
@@ -126,10 +130,11 @@ class DBCS_Converter {
         $placeholders         = implode(', ', array_fill(0, count($sanitized_post_types), '%s'));
 
         $sql = "
-            SELECT ID, post_name, post_type, post_status
+            SELECT ID, post_name, post_type, post_status, post_parent
             FROM {$wpdb->posts}
             WHERE post_type IN ($placeholders)
               AND post_status NOT IN ('trash', 'auto-draft')
+            ORDER BY ID
             LIMIT %d OFFSET %d
         ";
 
@@ -149,6 +154,9 @@ class DBCS_Converter {
         });
 
         foreach ($posts as $post) {
+            if ($check_permissions && !current_user_can('edit_post', (int) $post->ID)) {
+                continue;
+            }
             try {
                 $decoded_slug = urldecode($post->post_name);
                 $new_slug     = $this->transliterator->transliterate($decoded_slug);
@@ -158,7 +166,7 @@ class DBCS_Converter {
                     $post->ID,
                     get_post_status($post->ID),
                     $post->post_type,
-                    0
+                    (int) $post->post_parent
                 );
 
                 $updated = wp_update_post([
@@ -198,7 +206,7 @@ class DBCS_Converter {
      * @param int   $offset
      * @return array{converted: int, fetched: int, errors: array}
      */
-    private function convert_terms($taxonomies, $offset = 0) {
+    private function convert_terms($taxonomies, $offset = 0, $check_permissions = false) {
         global $wpdb;
 
         $offset    = absint($offset);
@@ -222,6 +230,7 @@ class DBCS_Converter {
             FROM {$wpdb->terms} AS t
             INNER JOIN {$wpdb->term_taxonomy} AS tt ON t.term_id = tt.term_id
             WHERE tt.taxonomy IN ($placeholders)
+            ORDER BY t.term_id, tt.term_taxonomy_id
             LIMIT %d OFFSET %d
         ";
 
@@ -241,6 +250,9 @@ class DBCS_Converter {
         });
 
         foreach ($terms as $term) {
+            if ($check_permissions && !current_user_can('edit_term', (int) $term->term_id)) {
+                continue;
+            }
             try {
                 $decoded_slug = urldecode($term->slug);
                 $new_slug     = $this->transliterator->transliterate($decoded_slug);

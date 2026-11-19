@@ -151,7 +151,7 @@ class DBCS_Transliterator {
         // Slug содержит кириллицу — транслитерируем
         if (!empty($decoded_slug) && $this->has_cyrillic($decoded_slug)) {
             $data['post_name'] = $this->transliterate($decoded_slug);
-            return $data;
+            return $this->ensure_unique_slug($data, $postarr);
         }
 
         // Slug пустой, заголовок кириллический, не черновик — генерируем
@@ -159,7 +159,7 @@ class DBCS_Transliterator {
             if (!in_array($post_status, ['auto-draft', 'draft'], true)) {
                 $data['post_name'] = $this->transliterate($title);
             }
-            return $data;
+            return $this->ensure_unique_slug($data, $postarr);
         }
 
         // При публикации: slug мог быть сгенерирован из слова-статуса («Черновик» и т.п.)
@@ -175,7 +175,112 @@ class DBCS_Transliterator {
             }
         }
 
+        return $this->ensure_unique_slug($data, $postarr);
+    }
+
+    /**
+     * Ядро вызывает wp_unique_post_slug только если post_name пустой.
+     * После нашей подстановки ярлык уже заполнен, поэтому уникальность проверяем сами.
+     *
+     * @param array $data    Данные записи.
+     * @param array $postarr Исходные аргументы.
+     * @return array
+     */
+    private function ensure_unique_slug($data, $postarr) {
+        $slug = isset($data['post_name']) ? (string) wp_unslash($data['post_name']) : '';
+        if ($slug === '' || empty($data['post_type'])) {
+            return $data;
+        }
+
+        $post_id = isset($postarr['ID']) ? (int) $postarr['ID'] : 0;
+        $parent  = isset($data['post_parent']) ? (int) wp_unslash($data['post_parent']) : 0;
+        $status  = isset($data['post_status']) ? (string) wp_unslash($data['post_status']) : 'publish';
+        $type    = (string) wp_unslash($data['post_type']);
+
+        $data['post_name'] = wp_unique_post_slug($slug, $post_id, $status, $type, $parent);
+
         return $data;
+    }
+
+    /**
+     * У уже опубликованных записей с одним ярлыком оставляет адрес самой ранней,
+     * остальным добавляет -2, -3 и т.д.
+     */
+    public function dedupe_existing_slugs() {
+        global $wpdb;
+
+        $skipped_types = [
+            'revision',
+            'nav_menu_item',
+            'customize_changeset',
+            'oembed_cache',
+            'user_request',
+            'wp_global_styles',
+            'wp_template',
+            'wp_template_part',
+            'wp_navigation',
+        ];
+        $placeholders = implode(', ', array_fill(0, count($skipped_types), '%s'));
+
+        $sql = "
+            SELECT p.ID, p.post_name, p.post_type, p.post_status, p.post_parent
+            FROM {$wpdb->posts} p
+            INNER JOIN (
+                SELECT post_name, post_type
+                FROM {$wpdb->posts}
+                WHERE post_name <> ''
+                  AND post_status NOT IN ('trash', 'auto-draft')
+                  AND post_type NOT IN ($placeholders)
+                GROUP BY post_name, post_type
+                HAVING COUNT(*) > 1
+            ) d ON d.post_name = p.post_name AND d.post_type = p.post_type
+            WHERE p.post_status NOT IN ('trash', 'auto-draft')
+            ORDER BY p.post_date ASC, p.ID ASC
+        ";
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $prepared = $wpdb->prepare($sql, $skipped_types);
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results($prepared);
+
+        if (!is_array($rows) || $rows === []) {
+            return;
+        }
+
+        $kept = [];
+        foreach ($rows as $row) {
+            $key = $row->post_type . "\n" . $row->post_name;
+            if (!isset($kept[$key])) {
+                $kept[$key] = true;
+                continue;
+            }
+
+            if (!current_user_can('edit_post', (int) $row->ID)) {
+                continue;
+            }
+
+            $new_slug = wp_unique_post_slug(
+                $row->post_name,
+                (int) $row->ID,
+                $row->post_status,
+                $row->post_type,
+                (int) $row->post_parent
+            );
+
+            if ($new_slug === $row->post_name) {
+                continue;
+            }
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->update(
+                $wpdb->posts,
+                ['post_name' => $new_slug],
+                ['ID' => (int) $row->ID],
+                ['%s'],
+                ['%d']
+            );
+            clean_post_cache((int) $row->ID);
+        }
     }
 
     /**

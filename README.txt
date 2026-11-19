@@ -3,7 +3,7 @@ Contributors: lzolotarev
 Tags: transliteration, cyrillic, slugs, url, seo
 Requires at least: 5.8
 Tested up to: 6.9
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 Requires PHP: 7.4
 Requires Plugins: devbrothers-admin-panel
 License: GPLv2 or later
@@ -119,6 +119,12 @@ No, transliteration only occurs when saving a post and does not affect site perf
 
 == Changelog ==
 
+= 1.0.3 =
+* Keep transliterated slugs unique, so a repeated title no longer reuses another post's address
+* One-time split of existing duplicate slugs; the earliest post keeps the original URL
+* Check edit permissions on each post and term during bulk conversion
+* Validate conversion offsets and keep hierarchical slugs scoped to their actual parent
+
 = 1.0.2 =
 * Re-release with corrected SVN tag format
 * No code changes from 1.0.1
@@ -126,7 +132,6 @@ No, transliteration only occurs when saving a post and does not affect site perf
 = 1.0.1 =
 * Updated code for WordPress 7.0 compatibility
 * Security and performance improvements
-
 
 = 1.0.0 =
 * Initial release
@@ -139,6 +144,9 @@ No, transliteration only occurs when saving a post and does not affect site perf
 * Taxonomy support
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Repeated titles no longer share one URL. Existing duplicate slugs are split once; the earliest post keeps the original address.
 
 = 1.0.0 =
 Initial release of DevBrothers Cyrillic URL plugin.

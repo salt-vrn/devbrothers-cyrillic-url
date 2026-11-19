@@ -3,7 +3,7 @@
  * Plugin Name: DevBrothers Cyrillic URL
  * Plugin URI: https://devbrothers.ru/cyrillic-slugs
  * Description: Automatic transliteration of Cyrillic URLs to Latin according to ISO 9 standard. Support for all post types including WooCommerce.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: DevBrothers
  * Author URI: https://devbrothers.ru
  * License: GPL v2 or later
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('DBCS_VERSION', '1.0.2');
+define('DBCS_VERSION', '1.0.3');
 define('DBCS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('DBCS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('DBCS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -90,6 +90,20 @@ class DevBrothers_Cyrillic_Slugs {
         $this->transliterator = new DBCS_Transliterator();
         $this->settings = new DBCS_Settings();
         $this->converter = new DBCS_Converter($this->transliterator);
+
+        add_action('admin_init', [$this, 'maybe_dedupe_slugs']);
+    }
+
+    /**
+     * Один раз разводит уже совпавшие ярлыки. Новые записи правит ensure_unique_slug().
+     */
+    public function maybe_dedupe_slugs() {
+        if (wp_doing_ajax() || !current_user_can('manage_options') || get_option('dbcs_duplicate_slugs_fixed') === '1') {
+            return;
+        }
+
+        $this->transliterator->dedupe_existing_slugs();
+        update_option('dbcs_duplicate_slugs_fixed', '1', false);
     }
 
     public function register_in_devbrothers() {

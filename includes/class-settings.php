@@ -334,9 +334,13 @@ class DBCS_Settings {
      */
     private function save_settings_internal() {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce проверяется в render_settings_page
-        $post_types = isset($_POST['dbcs_post_types']) ? array_map('sanitize_text_field', wp_unslash($_POST['dbcs_post_types'])) : [];
+        $post_types = isset($_POST['dbcs_post_types']) && is_array($_POST['dbcs_post_types'])
+            ? array_values(array_intersect(array_keys($this->get_available_post_types()), array_filter(wp_unslash($_POST['dbcs_post_types']), 'is_string')))
+            : [];
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce проверяется в render_settings_page
-        $taxonomies = isset($_POST['dbcs_taxonomies']) ? array_map('sanitize_text_field', wp_unslash($_POST['dbcs_taxonomies'])) : [];
+        $taxonomies = isset($_POST['dbcs_taxonomies']) && is_array($_POST['dbcs_taxonomies'])
+            ? array_values(array_intersect(array_keys($this->get_available_taxonomies()), array_filter(wp_unslash($_POST['dbcs_taxonomies']), 'is_string')))
+            : [];
 
         $settings = [
             'post_types' => $post_types,
